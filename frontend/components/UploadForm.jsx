@@ -54,6 +54,7 @@ const UploadForm = () => {
       setResult(res.data.message.data);
       }
     } catch (err) {
+      console.log(import.meta.env.VITE_PORT)
       console.error(err);
       toast.error("❌ OCR Failed. Please try again.");
     }
