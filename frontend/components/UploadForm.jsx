@@ -42,11 +42,17 @@ const UploadForm = () => {
 
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/api/ocr", formData, {
+      const res = await axios.post(`${import.meta.env.VITE_PORT}/api/ocr`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+      if(res.data.message.status===false)
+      {
+        toast.error(res.data.message.message)
+      }
+      else{
       toast.success("✅ OCR Processed Successfully!");
       setResult(res.data.message.data);
+      }
     } catch (err) {
       console.error(err);
       toast.error("❌ OCR Failed. Please try again.");

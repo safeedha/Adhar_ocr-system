@@ -1,25 +1,59 @@
-import Tesseract from 'tesseract.js';
+
 import fs from 'fs';
+import calculateAge from '../service/calculateage.js'
+import preprocessImage from '../service/processimage.js'
+import runOCR from '../service/ocrconvert.js'
+import getAddress from '../service/getaddress.js'
+import  getPin from '../service/getPinnumber.js'
+
 
 export const processOCR = async (req, res) => {
   try {
+    let response={}
     const frontImage = req.files.front[0].path;
     const backImage = req.files.back[0].path;
-
-   
-    const frontText = await Tesseract.recognize(frontImage, 'eng');
-    let data={}
-    const backText = await Tesseract.recognize(backImage, 'eng');
-     console.log(frontText.data.text,backText.data.text)   
+    const processedFront = `processed_front_${Date.now()}.png`;
+    const processedBack = `processed_back_${Date.now()}.png`;
+     await preprocessImage(frontImage, processedFront);
+    await preprocessImage(backImage, processedBack);
+    const frontText=await runOCR(processedFront)
+    const backText=await runOCR(processedBack)
+  
+  
     fs.unlinkSync(frontImage);
     fs.unlinkSync(backImage);
-    const lines =frontText.data.text.split("\n").map(l => l.trim()).filter(Boolean);
+    fs.unlinkSync(processedFront);
+    fs.unlinkSync(processedBack);
+     if(!frontText.includes("Government of India"))
+     {  
+        response.status=false
+        response.message="Invalid Aadhaar card. Please upload a valid Aadhaar front image."
+        res.json({message:response})
+        return
+     }
+      if(!backText.includes("Address"))
+     {  
+        response.status=false
+        response.message="Invalid Aadhaar card. Please upload a valid Aadhaar back image."
+        res.json({message:response})
+        return
+     }
+
+    let data={}
+
+    const lines =frontText.split("\n").map(l => l.trim()).filter(Boolean);
+     console.log(lines)
     data.Name=lines[2]
 
-const dobLine = lines.find(l => l.toLowerCase().includes("dob"));
+  const dobLine = lines.find(l => l.toLowerCase().includes("dob"));
+
 if (dobLine) {
   data.dob = dobLine.split(":").pop().trim(); 
 }
+ let dob = data.dob.match(/\d{2}\/\d{2}\/\d{4}/)[0];
+  data.dob=dob
+  const age=calculateAge(data.dob)
+  data.age=age
 
 const genderLine = lines.find(l => 
   l.toLowerCase().includes("male") || l.toLowerCase().includes("female")
@@ -37,24 +71,15 @@ if (aadhaarLine) {
   data.aadhaarNumber = aadhaarLine.match(/\d{4}\s\d{4}\s\d{4}/)[0];
 }
 
-   const backline = backText.data.text.split("\n").map(l => l.trim()).filter(Boolean);
-console.log(backline);
+   const backline = backText.split("\n").map(l => l.trim()).filter(Boolean);
+   data.address=getAddress(backline) 
 
 
-let start = backline.findIndex(l => l.toLowerCase().includes("address"));
-if (start === -1) start = 0; 
+data.pincode=getPin(backline)
+response.status=true
+response.data=data
+response.message="Adhar parsed sucessfully"
 
-let end = backline.findIndex(l => /\d{4}\s?\d{4}\s?\d{4}/.test(l)); 
-
-if (end === -1) end = backline.length; 
-
-data.address = backline.slice(start, end).join(" ");
-let response={
-  stattus:true,
-  data:data,
-  message:"Adhar parsed sucessfully"
-}
-;
     res.json({message:response});
   } catch (err) {
     console.error(err);
