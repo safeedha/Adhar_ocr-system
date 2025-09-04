@@ -18,7 +18,8 @@ export const processOCR = async (req, res) => {
     await preprocessImage(backImage, processedBack);
     const frontText=await runOCR(processedFront)
     const backText=await runOCR(processedBack)
-  
+      console.log(frontText)
+      console.log(backText)
   
     fs.unlinkSync(frontImage);
     fs.unlinkSync(backImage);

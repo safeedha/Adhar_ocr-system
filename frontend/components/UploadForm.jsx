@@ -4,6 +4,7 @@ import { FiUploadCloud } from "react-icons/fi";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./uploadform.css";
+import ClipLoader from "react-spinners/ClipLoader";
 
 const UploadForm = () => {
   const [front, setFront] = useState(null);
@@ -111,6 +112,12 @@ const UploadForm = () => {
             <p className="placeholder-text">Results will be displayed here after submitting.</p>
           )}
 
+          {loading&&(
+            <div className='loader'>
+             <ClipLoader color="#36d7b7" size={50} />
+            </div>
+          )}
+          
           {result && (
             <div className="parsed-details">
               <h3>Parsed Details</h3>

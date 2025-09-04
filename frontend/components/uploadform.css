@@ -11,6 +11,9 @@
   position: relative;
   overflow-y: auto; 
 }
+.loader{
+  text-align: center;
+}
 .parsed-details {
   background: #f8f9fb;
   padding: 20px;
